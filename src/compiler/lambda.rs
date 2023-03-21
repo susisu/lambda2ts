@@ -26,20 +26,20 @@ impl Term {
         match self {
             Term::Var { name } => HashSet::from([name.clone()]),
             Term::App { func, arg } => {
-                let func_vs = func.free_vars();
-                let arg_vs = arg.free_vars();
-                func_vs.union(&arg_vs).cloned().collect()
+                let func_fvs = func.free_vars();
+                let arg_fvs = arg.free_vars();
+                func_fvs.union(&arg_fvs).cloned().collect()
             }
             Term::Abs { param, body } => {
-                let mut body_vs = body.free_vars();
-                body_vs.remove(param);
-                body_vs
+                let mut body_fvs = body.free_vars();
+                body_fvs.remove(param);
+                body_fvs
             }
             Term::Let { name, value, body } => {
-                let value_vs = value.free_vars();
-                let mut body_vs = body.free_vars();
-                body_vs.remove(name);
-                value_vs.union(&body_vs).cloned().collect()
+                let value_fvs = value.free_vars();
+                let mut body_fvs = body.free_vars();
+                body_fvs.remove(name);
+                value_fvs.union(&body_fvs).cloned().collect()
             }
         }
     }
