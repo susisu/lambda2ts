@@ -750,3 +750,73 @@ mod tests_normalize_let {
         assert_eq!(normalize_let(&term), expected);
     }
 }
+
+fn mangle(term: &Term, env: &HashSet<String>) -> Term {
+    match term {
+        Term::Var { name: _ } => term.clone(),
+        Term::App { func: _, arg: _ } => term.clone(),
+        Term::Abs { param: _, body: _ } => term.clone(),
+        Term::Let { name, value, body } => {
+            let new_name = if env.contains(name) {
+                find_fresh_var(env, name)
+            } else {
+                name.clone()
+            };
+            let mut new_env = env.clone();
+            new_env.insert(name.clone());
+            Term::Let {
+                name: new_name.clone(),
+                value: Rc::clone(value),
+                body: Rc::new(mangle(
+                    &body.subst(
+                        name,
+                        &Term::Var {
+                            name: new_name.clone(),
+                        },
+                    ),
+                    &new_env,
+                )),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_mangle {
+    use super::*;
+
+    #[test]
+    fn test_mangle() {
+        let term = Term::Let {
+            name: String::from("x"),
+            value: Rc::new(Term::Var {
+                name: String::from("y"),
+            }),
+            body: Rc::new(Term::Let {
+                name: String::from("x"),
+                value: Rc::new(Term::Var {
+                    name: String::from("z"),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("x"),
+                }),
+            }),
+        };
+        let expected = Term::Let {
+            name: String::from("x"),
+            value: Rc::new(Term::Var {
+                name: String::from("y"),
+            }),
+            body: Rc::new(Term::Let {
+                name: String::from("x0"),
+                value: Rc::new(Term::Var {
+                    name: String::from("z"),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("x0"),
+                }),
+            }),
+        };
+        assert_eq!(mangle(&term, &HashSet::new()), expected);
+    }
+}
