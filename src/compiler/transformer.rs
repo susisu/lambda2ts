@@ -46,8 +46,14 @@ fn normalize_app(term: &Term) -> Term {
         Term::App { func, arg } => {
             if !is_term_app(func) {
                 match func.as_ref() {
-                    Term::Var { name: _ } => panic!("unexpected case"),
-                    Term::App { func: _, arg: _ } => panic!("unexpected case"),
+                    Term::Var { name: _ } => normalize_app(&Term::App {
+                        func: Rc::new(normalize_app(func)),
+                        arg: Rc::clone(arg),
+                    }),
+                    Term::App { func: _, arg: _ } => normalize_app(&Term::App {
+                        func: Rc::new(normalize_app(func)),
+                        arg: Rc::clone(arg),
+                    }),
                     Term::Abs { param, body } => {
                         let arg_fvs = arg.free_vars();
                         let new_name = find_fresh_var(&arg_fvs, &String::from("v"));
@@ -96,8 +102,14 @@ fn normalize_app(term: &Term) -> Term {
                 }
             } else if !is_term_app(arg) {
                 match arg.as_ref() {
-                    Term::Var { name: _ } => panic!("unexpected case"),
-                    Term::App { func: _, arg: _ } => panic!("unexpected case"),
+                    Term::Var { name: _ } => normalize_app(&Term::App {
+                        func: Rc::clone(func),
+                        arg: Rc::new(normalize_app(arg)),
+                    }),
+                    Term::App { func: _, arg: _ } => normalize_app(&Term::App {
+                        func: Rc::clone(func),
+                        arg: Rc::new(normalize_app(arg)),
+                    }),
                     Term::Abs { param, body } => {
                         let func_fvs = func.free_vars();
                         let new_name = find_fresh_var(&func_fvs, &String::from("v"));
