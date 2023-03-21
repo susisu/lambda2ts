@@ -1,4 +1,4 @@
-use super::lambda::Term;
+use super::lambda::{Statement, Term};
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -821,9 +821,21 @@ mod tests_mangle {
     }
 }
 
-pub fn transform(term: &Term) -> Term {
+fn transform_term(term: &Term) -> Term {
     let term = normalize_app(term);
     let term = normalize_abs(&term);
     let term = normalize_let(&term);
     mangle(&term, &HashSet::new())
+}
+
+fn transform_statement(stmt: &Statement) -> Statement {
+    match stmt {
+        Statement::Declaration { name, value } => Statement::Declaration {
+            name: name.clone(),
+            value: Rc::new(transform_term(value)),
+        },
+    }
+}
+pub fn transform(program: &Vec<Statement>) -> Vec<Statement> {
+    program.iter().map(transform_statement).collect()
 }
