@@ -1,21 +1,23 @@
 use std::collections::HashSet;
+use std::rc::Rc;
 
+#[derive(Clone)]
 pub enum Term {
     Var {
         name: String,
     },
     App {
-        func: Box<Term>,
-        arg: Box<Term>,
+        func: Rc<Term>,
+        arg: Rc<Term>,
     },
     Abs {
         param: String,
-        body: Box<Term>,
+        body: Rc<Term>,
     },
     Let {
         name: String,
-        value: Box<Term>,
-        body: Box<Term>,
+        value: Rc<Term>,
+        body: Rc<Term>,
     },
 }
 
@@ -52,7 +54,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn term_var_free_vars() {
+    fn test_term_var_free_vars() {
         let term = Term::Var {
             name: String::from("x"),
         };
@@ -61,12 +63,12 @@ mod tests {
     }
 
     #[test]
-    fn term_app_free_vars() {
+    fn test_term_app_free_vars() {
         let term = Term::App {
-            func: Box::new(Term::Var {
+            func: Rc::new(Term::Var {
                 name: String::from("x"),
             }),
-            arg: Box::new(Term::Var {
+            arg: Rc::new(Term::Var {
                 name: String::from("y"),
             }),
         };
@@ -75,14 +77,14 @@ mod tests {
     }
 
     #[test]
-    fn term_abs_free_vars() {
+    fn test_term_abs_free_vars() {
         let term = Term::Abs {
             param: String::from("x"),
-            body: Box::new(Term::App {
-                func: Box::new(Term::Var {
+            body: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
                     name: String::from("x"),
                 }),
-                arg: Box::new(Term::Var {
+                arg: Rc::new(Term::Var {
                     name: String::from("y"),
                 }),
             }),
@@ -92,17 +94,17 @@ mod tests {
     }
 
     #[test]
-    fn term_let_free_vars() {
+    fn test_term_let_free_vars() {
         let term = Term::Let {
             name: String::from("x"),
-            value: Box::new(Term::Var {
+            value: Rc::new(Term::Var {
                 name: String::from("y"),
             }),
-            body: Box::new(Term::App {
-                func: Box::new(Term::Var {
+            body: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
                     name: String::from("x"),
                 }),
-                arg: Box::new(Term::Var {
+                arg: Rc::new(Term::Var {
                     name: String::from("z"),
                 }),
             }),
@@ -112,14 +114,14 @@ mod tests {
 
         let term = Term::Let {
             name: String::from("x"),
-            value: Box::new(Term::Var {
+            value: Rc::new(Term::Var {
                 name: String::from("x"),
             }),
-            body: Box::new(Term::App {
-                func: Box::new(Term::Var {
+            body: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
                     name: String::from("x"),
                 }),
-                arg: Box::new(Term::Var {
+                arg: Rc::new(Term::Var {
                     name: String::from("y"),
                 }),
             }),
