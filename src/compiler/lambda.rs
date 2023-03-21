@@ -322,6 +322,7 @@ mod tests_term_subst {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
-    Declaration { name: String, value: Box<Term> },
+    Declaration { name: String, value: Rc<Term> },
 }

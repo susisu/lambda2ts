@@ -1,4 +1,4 @@
-use crate::compiler::lambda::Term;
+use super::lambda::Term;
 use std::collections::HashSet;
 use std::rc::Rc;
 
