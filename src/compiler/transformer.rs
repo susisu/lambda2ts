@@ -378,70 +378,73 @@ fn is_term_abs(term: &Term) -> bool {
 fn normalize_abs(term: &Term) -> Term {
     match term {
         Term::Var { name: _ } => term.clone(),
+        // assuming term is already normalized by normalize_app
         Term::App { func: _, arg: _ } => term.clone(),
         Term::Abs { param, body } => {
-            if !is_term_abs(body) {
-                match body.as_ref() {
-                    Term::Var { name: _ } => term.clone(),
-                    // assuming body is already term_app
-                    Term::App { func: _, arg: _ } => term.clone(),
-                    Term::Abs { param: _, body: _ } => normalize_abs(&Term::Abs {
-                        param: param.clone(),
-                        body: Rc::new(normalize_abs(body)),
-                    }),
-                    Term::Let {
-                        name: let_name,
-                        value: let_value,
-                        body: let_body,
-                    } => {
-                        let let_value_fvs = let_value.free_vars();
-                        let new_let_name = if let_name == param {
-                            let let_body_fvs = let_body.free_vars();
-                            find_fresh_var(&let_body_fvs, let_name)
-                        } else {
-                            let_name.clone()
-                        };
-                        if let_value_fvs.contains(param) {
-                            Term::Let {
-                                name: new_let_name.clone(),
-                                value: Rc::new(normalize_abs(&Term::Abs {
-                                    param: param.clone(),
-                                    body: Rc::clone(let_value),
-                                })),
-                                body: Rc::new(normalize_abs(&Term::Abs {
-                                    param: param.clone(),
-                                    body: Rc::new(let_body.subst(
-                                        let_name,
-                                        &Term::App {
-                                            func: Rc::new(Term::Var {
-                                                name: new_let_name.clone(),
-                                            }),
-                                            arg: Rc::new(Term::Var {
-                                                name: param.clone(),
-                                            }),
-                                        },
-                                    )),
-                                })),
-                            }
-                        } else {
-                            Term::Let {
-                                name: new_let_name.clone(),
-                                value: Rc::new(normalize_abs(let_value)),
-                                body: Rc::new(normalize_abs(&&Term::Abs {
-                                    param: param.clone(),
-                                    body: Rc::new(let_body.subst(
-                                        let_name,
-                                        &Term::Var {
+            match body.as_ref() {
+                Term::Var { name: _ } => term.clone(),
+                // assuming body is normalized by normalize_app
+                Term::App { func: _, arg: _ } => term.clone(),
+                Term::Abs { param: _, body: _ } => {
+                    if is_term_abs(body) {
+                        term.clone()
+                    } else {
+                        normalize_abs(&Term::Abs {
+                            param: param.clone(),
+                            body: Rc::new(normalize_abs(body)),
+                        })
+                    }
+                }
+                Term::Let {
+                    name: let_name,
+                    value: let_value,
+                    body: let_body,
+                } => {
+                    let let_value_fvs = let_value.free_vars();
+                    let new_let_name = if let_name == param {
+                        let let_body_fvs = let_body.free_vars();
+                        find_fresh_var(&let_body_fvs, let_name)
+                    } else {
+                        let_name.clone()
+                    };
+                    if let_value_fvs.contains(param) {
+                        Term::Let {
+                            name: new_let_name.clone(),
+                            value: Rc::new(normalize_abs(&Term::Abs {
+                                param: param.clone(),
+                                body: Rc::clone(let_value),
+                            })),
+                            body: Rc::new(normalize_abs(&Term::Abs {
+                                param: param.clone(),
+                                body: Rc::new(let_body.subst(
+                                    let_name,
+                                    &Term::App {
+                                        func: Rc::new(Term::Var {
                                             name: new_let_name.clone(),
-                                        },
-                                    )),
-                                })),
-                            }
+                                        }),
+                                        arg: Rc::new(Term::Var {
+                                            name: param.clone(),
+                                        }),
+                                    },
+                                )),
+                            })),
+                        }
+                    } else {
+                        Term::Let {
+                            name: new_let_name.clone(),
+                            value: Rc::new(normalize_abs(let_value)),
+                            body: Rc::new(normalize_abs(&&Term::Abs {
+                                param: param.clone(),
+                                body: Rc::new(let_body.subst(
+                                    let_name,
+                                    &Term::Var {
+                                        name: new_let_name.clone(),
+                                    },
+                                )),
+                            })),
                         }
                     }
                 }
-            } else {
-                term.clone()
             }
         }
         Term::Let { name, value, body } => Term::Let {
