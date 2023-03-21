@@ -820,3 +820,10 @@ mod tests_mangle {
         assert_eq!(mangle(&term, &HashSet::new()), expected);
     }
 }
+
+pub fn transform(term: &Term) -> Term {
+    let term = normalize_app(term);
+    let term = normalize_abs(&term);
+    let term = normalize_let(&term);
+    mangle(&term, &HashSet::new())
+}
