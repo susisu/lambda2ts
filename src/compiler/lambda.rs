@@ -43,6 +43,10 @@ impl Term {
     }
 }
 
+pub enum Statement {
+    Declaration { name: String, value: Box<Term> },
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
