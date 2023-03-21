@@ -18,16 +18,14 @@ type App<F, X> = F extends Fun ? (F & { arg: X })["ret"] : never;
 
 // Functions are defined by extending the Fun interface.
 // The argument can be accessed via this["arg"].
-interface SetMap<F> extends Fun {
-  ret: App<F, this["arg"]>;
-}
-interface ToString extends Fun {
-  ret: this["arg"] extends number ? `${this["arg"]}` : never;
+interface IsNumber extends Fun {
+  ret: this["arg"] extends number ? true : false;
 }
 
-// Apply functions using App.
+// Apply functions using App<F, X>.
 // Functions can also be composed using high-order functions.
-type MyType = App<SetMap<ToString>, 6 | 28 | 496>; // = "6" | "28" | "496"
+type FilterSet<F, X> = X extends unknown ? (App<F, X> extends true ? T : never) : never;
+type MyType = FilterSet<IsNumber, "foo" | 42 | true | null | 0 | undefined>; // = 42 | 0
 ```
 
 This idea enables us to compile [untyped lambda calculus](https://en.wikipedia.org/wiki/Lambda_calculus) to TypeScript types more directly than before. Therefore, I have developed a PoC compiler.
