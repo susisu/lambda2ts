@@ -564,3 +564,189 @@ mod tests_normalize_abs {
         assert_eq!(normalize_abs(&term), expected);
     }
 }
+
+fn is_term_let(term: &Term) -> bool {
+    match term {
+        Term::Var { name: _ } => true,
+        Term::App { func, arg } => is_term_let(func) && is_term_let(arg),
+        Term::Abs { param: _, body } => is_term_let(body),
+        Term::Let {
+            name: _,
+            value: _,
+            body: _,
+        } => false,
+    }
+}
+
+fn normalize_let(term: &Term) -> Term {
+    match term {
+        Term::Var { name: _ } => term.clone(),
+        // assuming term is already normalized by normalize_app
+        Term::App { func: _, arg: _ } => term.clone(),
+        // assuming term is already normalized by normalize_abs
+        Term::Abs { param: _, body: _ } => term.clone(),
+        Term::Let { name, value, body } => {
+            match value.as_ref() {
+                Term::Var { name: _ } => Term::Let {
+                    name: name.clone(),
+                    value: Rc::clone(value),
+                    body: Rc::new(normalize_let(body)),
+                },
+                // assuming value is already normalized by normalize_app
+                Term::App { func: _, arg: _ } => Term::Let {
+                    name: name.clone(),
+                    value: Rc::clone(value),
+                    body: Rc::new(normalize_let(body)),
+                },
+                // assuming value is already normalized by normalize_abs
+                Term::Abs { param: _, body: _ } => Term::Let {
+                    name: name.clone(),
+                    value: Rc::clone(value),
+                    body: Rc::new(normalize_let(body)),
+                },
+                Term::Let {
+                    name: inner_name,
+                    value: inner_value,
+                    body: inner_body,
+                } => {
+                    if is_term_let(&inner_value) {
+                        let new_name = if inner_name == name {
+                            let inner_body_fvs = inner_body.free_vars();
+                            find_fresh_var(&inner_body_fvs, inner_name)
+                        } else {
+                            inner_name.clone()
+                        };
+                        Term::Let {
+                            name: new_name.clone(),
+                            value: Rc::clone(inner_value),
+                            body: Rc::new(normalize_let(&Term::Let {
+                                name: name.clone(),
+                                value: Rc::new(
+                                    inner_body.subst(inner_name, &Term::Var { name: new_name }),
+                                ),
+                                body: Rc::clone(body),
+                            })),
+                        }
+                    } else {
+                        normalize_let(&Term::Let {
+                            name: name.clone(),
+                            value: Rc::new(normalize_let(value)),
+                            body: Rc::clone(body),
+                        })
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_normalize_let {
+    use super::*;
+
+    #[test]
+    fn test_let_normal() {
+        let term = Term::Let {
+            name: String::from("x"),
+            value: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
+                    name: String::from("y"),
+                }),
+                arg: Rc::new(Term::Var {
+                    name: String::from("z"),
+                }),
+            }),
+            body: Rc::new(Term::Var {
+                name: String::from("x"),
+            }),
+        };
+        assert_eq!(normalize_let(&term), term);
+    }
+
+    #[test]
+    fn test_let_let() {
+        let term = Term::Let {
+            name: String::from("x"),
+            value: Rc::new(Term::Let {
+                name: String::from("y"),
+                value: Rc::new(Term::App {
+                    func: Rc::new(Term::Var {
+                        name: String::from("z"),
+                    }),
+                    arg: Rc::new(Term::Var {
+                        name: String::from("w"),
+                    }),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("y"),
+                }),
+            }),
+            body: Rc::new(Term::Var {
+                name: String::from("x"),
+            }),
+        };
+        let expected = Term::Let {
+            name: String::from("y"),
+            value: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
+                    name: String::from("z"),
+                }),
+                arg: Rc::new(Term::Var {
+                    name: String::from("w"),
+                }),
+            }),
+            body: Rc::new(Term::Let {
+                name: String::from("x"),
+                value: Rc::new(Term::Var {
+                    name: String::from("y"),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("x"),
+                }),
+            }),
+        };
+        assert_eq!(normalize_let(&term), expected);
+
+        let term = Term::Let {
+            name: String::from("x"),
+            value: Rc::new(Term::Let {
+                name: String::from("x"),
+                value: Rc::new(Term::App {
+                    func: Rc::new(Term::Var {
+                        name: String::from("y"),
+                    }),
+                    arg: Rc::new(Term::Var {
+                        name: String::from("z"),
+                    }),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("x"),
+                }),
+            }),
+            body: Rc::new(Term::Var {
+                name: String::from("x"),
+            }),
+        };
+        let expected = Term::Let {
+            name: String::from("x0"),
+            value: Rc::new(Term::App {
+                func: Rc::new(Term::Var {
+                    name: String::from("y"),
+                }),
+                arg: Rc::new(Term::Var {
+                    name: String::from("z"),
+                }),
+            }),
+            body: Rc::new(Term::Let {
+                name: String::from("x"),
+                value: Rc::new(Term::Var {
+                    name: String::from("x0"),
+                }),
+                body: Rc::new(Term::Var {
+                    name: String::from("x"),
+                }),
+            }),
+        };
+        assert_eq!(normalize_let(&term), expected);
+    }
+}
