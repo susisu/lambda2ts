@@ -82,10 +82,6 @@ impl Term {
     }
 }
 
-pub enum Statement {
-    Declaration { name: String, value: Box<Term> },
-}
-
 #[cfg(test)]
 mod tests_term_free_vars {
     use super::*;
@@ -324,4 +320,8 @@ mod tests_term_subst {
         };
         assert_eq!(term.subst(&String::from("y"), &subst_term), expected);
     }
+}
+
+pub enum Statement {
+    Declaration { name: String, value: Box<Term> },
 }
