@@ -610,9 +610,11 @@ fn normalize_let(term: &Term) -> Term {
                     body: inner_body,
                 } => {
                     if is_term_let(&inner_value) {
-                        let new_name = if inner_name == name {
+                        let body_fvs = body.free_vars();
+                        let new_name = if inner_name == name || body_fvs.contains(inner_name) {
                             let inner_body_fvs = inner_body.free_vars();
-                            find_fresh_var(&inner_body_fvs, inner_name)
+                            let env = body_fvs.union(&inner_body_fvs).cloned().collect();
+                            find_fresh_var(&env, inner_name)
                         } else {
                             inner_name.clone()
                         };
