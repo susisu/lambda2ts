@@ -22,6 +22,17 @@ pub enum Term {
 }
 
 impl Term {
+    pub fn print(&self) -> String {
+        match self {
+            Term::Var { name } => name.clone(),
+            Term::App { func, arg } => format!("({} {})", func.print(), arg.print()),
+            Term::Abs { param, body } => format!("(λ{}. {})", param, body.print()),
+            Term::Let { name, value, body } => {
+                format!("(let {} = {} in {})", name, value.print(), body.print())
+            }
+        }
+    }
+
     pub fn free_vars(&self) -> HashSet<String> {
         match self {
             Term::Var { name } => HashSet::from([name.clone()]),

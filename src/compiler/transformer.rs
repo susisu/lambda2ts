@@ -825,7 +825,8 @@ fn transform_term(term: &Term) -> Term {
     let term = normalize_app(term);
     let term = normalize_abs(&term);
     let term = normalize_let(&term);
-    mangle(&term, &HashSet::new())
+    let term = mangle(&term, &HashSet::new());
+    term
 }
 
 fn transform_statement(stmt: &Statement) -> Statement {
