@@ -27,10 +27,10 @@ mod tests_find_fresh_var {
     }
 }
 
-fn is_term_app(term: &Term) -> bool {
+fn is_normal_app_part(term: &Term) -> bool {
     match term {
         Term::Var { name: _ } => true,
-        Term::App { func, arg } => is_term_app(func) && is_term_app(arg),
+        Term::App { func, arg } => is_normal_app_part(func) && is_normal_app_part(arg),
         Term::Abs { param: _, body: _ } => false,
         Term::Let {
             name: _,
@@ -44,7 +44,7 @@ fn normalize_app(term: &Term) -> Term {
     match term {
         Term::Var { name: _ } => term.clone(),
         Term::App { func, arg } => {
-            if !is_term_app(func) {
+            if !is_normal_app_part(func) {
                 match func.as_ref() {
                     Term::Var { name: _ } => normalize_app(&Term::App {
                         func: Rc::new(normalize_app(func)),
@@ -100,7 +100,7 @@ fn normalize_app(term: &Term) -> Term {
                         }
                     }
                 }
-            } else if !is_term_app(arg) {
+            } else if !is_normal_app_part(arg) {
                 match arg.as_ref() {
                     Term::Var { name: _ } => normalize_app(&Term::App {
                         func: Rc::clone(func),
@@ -362,11 +362,11 @@ mod tests_normalize_app {
     }
 }
 
-fn is_term_abs(term: &Term) -> bool {
+fn is_normal_abs_body(term: &Term) -> bool {
     match term {
         Term::Var { name: _ } => true,
-        Term::App { func, arg } => is_term_abs(func) && is_term_abs(arg),
-        Term::Abs { param: _, body } => is_term_abs(body),
+        Term::App { func, arg } => is_normal_abs_body(func) && is_normal_abs_body(arg),
+        Term::Abs { param: _, body } => is_normal_abs_body(body),
         Term::Let {
             name: _,
             value: _,
@@ -386,7 +386,7 @@ fn normalize_abs(term: &Term) -> Term {
                 // assuming body is normalized by normalize_app
                 Term::App { func: _, arg: _ } => term.clone(),
                 Term::Abs { param: _, body: _ } => {
-                    if is_term_abs(body) {
+                    if is_normal_abs_body(body) {
                         term.clone()
                     } else {
                         normalize_abs(&Term::Abs {
@@ -565,11 +565,11 @@ mod tests_normalize_abs {
     }
 }
 
-fn is_term_let(term: &Term) -> bool {
+fn is_normal_let_value(term: &Term) -> bool {
     match term {
         Term::Var { name: _ } => true,
-        Term::App { func, arg } => is_term_let(func) && is_term_let(arg),
-        Term::Abs { param: _, body } => is_term_let(body),
+        Term::App { func, arg } => is_normal_let_value(func) && is_normal_let_value(arg),
+        Term::Abs { param: _, body } => is_normal_let_value(body),
         Term::Let {
             name: _,
             value: _,
@@ -609,7 +609,7 @@ fn normalize_let(term: &Term) -> Term {
                     value: inner_value,
                     body: inner_body,
                 } => {
-                    if is_term_let(&inner_value) {
+                    if is_normal_let_value(&inner_value) {
                         let body_fvs = body.free_vars();
                         let new_name = if inner_name == name || body_fvs.contains(inner_name) {
                             let inner_body_fvs = inner_body.free_vars();
