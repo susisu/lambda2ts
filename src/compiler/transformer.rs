@@ -1,6 +1,7 @@
-use super::lambda::{Statement, Term};
 use std::collections::HashSet;
 use std::rc::Rc;
+
+use super::lambda::{Statement, Term};
 
 fn find_fresh_var(env: &HashSet<String>, prefix: &String) -> String {
     let mut var = prefix.clone();

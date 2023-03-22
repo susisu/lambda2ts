@@ -1,6 +1,7 @@
-use super::lambda::{Statement, Term};
 use std::rc::Rc;
 use std::vec::Vec;
+
+use super::lambda::{Statement, Term};
 
 fn generate_term(term: &Term) -> String {
     match term {
@@ -40,15 +41,15 @@ fn generate_statement(stmt: &Statement) -> String {
                     let if_sig = if depth == 0 {
                         name.clone()
                     } else {
-                        format!("{name}__{depth}<{if_args}>")
+                        format!("{name}${depth}<{if_args}>")
                     };
 
                     let next_depth = depth + 1;
 
                     let if_ret = if depth == 0 {
-                        format!("{name}__{next_depth}<this[\"arg\"]>")
+                        format!("{name}${next_depth}<this[\"arg\"]>")
                     } else {
-                        format!("{name}__{next_depth}<{if_args}, this[\"arg\"]>")
+                        format!("{name}${next_depth}<{if_args}, this[\"arg\"]>")
                     };
 
                     let if_code = format!("interface {if_sig} extends Fun {{ ret: {if_ret} }}\n");
@@ -63,7 +64,7 @@ fn generate_statement(stmt: &Statement) -> String {
                     depth = next_depth;
                 }
 
-                let type_name = format!("{name}__{depth}");
+                let type_name = format!("{name}${depth}");
                 let type_ret = generate_term(&current_term);
                 let type_code = format!("type {type_name}<{if_args}> = {type_ret};\n");
                 res.push_str(type_code.as_str());
@@ -84,7 +85,7 @@ fn generate_statement(stmt: &Statement) -> String {
                     body: inner_body,
                 } = current_term
                 {
-                    let new_name = String::from(format!("{name}__{inner_name}"));
+                    let new_name = String::from(format!("{name}${inner_name}"));
                     let hyp_stmt = Statement::Declaration {
                         name: new_name.clone(),
                         value: Rc::clone(&inner_value),
@@ -125,8 +126,9 @@ pub fn generate(program: &Vec<Statement>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use indoc::indoc;
+
+    use super::*;
 
     #[test]
     fn test_generate() {
@@ -194,12 +196,12 @@ mod tests {
             type App<F, X> = F extends Fun ? (F & { arg: X })[\"ret\"] : never;
             type foo = x;
             type bar = App<x, y>;
-            interface baz extends Fun { ret: baz__1<this[\"arg\"]> }
-            interface baz__1<x> extends Fun { ret: baz__2<x, this[\"arg\"]> }
-            type baz__2<x, y> = App<x, y>;
-            type qux__x = y;
-            type qux__z = qux__x;
-            type qux = App<qux__x, qux__z>;
+            interface baz extends Fun { ret: baz$1<this[\"arg\"]> }
+            interface baz$1<x> extends Fun { ret: baz$2<x, this[\"arg\"]> }
+            type baz$2<x, y> = App<x, y>;
+            type qux$x = y;
+            type qux$z = qux$x;
+            type qux = App<qux$x, qux$z>;
         "};
         assert_eq!(generate(&program), expected);
     }

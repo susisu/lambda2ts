@@ -1,9 +1,10 @@
 mod compiler;
 
+use std::rc::Rc;
+
 use crate::compiler::generator;
 use crate::compiler::lambda::{Statement, Term};
 use crate::compiler::transformer;
-use std::rc::Rc;
 
 fn main() {
     let program = vec![Statement::Declaration {
