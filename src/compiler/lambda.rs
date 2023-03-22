@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-use std::rc::Rc;
+use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Term {

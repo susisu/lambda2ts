@@ -1,5 +1,4 @@
-use std::rc::Rc;
-use std::vec::Vec;
+use std::{rc::Rc, vec::Vec};
 
 use super::lambda::{Statement, Term};
 
