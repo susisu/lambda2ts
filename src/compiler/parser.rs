@@ -145,7 +145,7 @@ fn program(input: &str) -> IResult<&str, Vec<Statement>> {
     success(stmts)(input)
 }
 
-fn parse(input: &str) -> Result<Vec<Statement>, Error<&str>> {
+pub fn parse(input: &str) -> Result<Vec<Statement>, Error<&str>> {
     program(input).finish().map(|(_, output)| output)
 }
 

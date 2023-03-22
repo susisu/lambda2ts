@@ -1,70 +1,15 @@
 mod compiler;
 
-use std::rc::Rc;
+use std::io::{self, Read};
 
-use crate::compiler::{
-    generator,
-    lambda::{Statement, Term},
-    transformer,
-};
+use crate::compiler::{generator, parser, transformer};
 
 fn main() {
-    let program = vec![Statement::Declaration {
-        name: String::from("fix"),
-        value: Rc::new(Term::Abs {
-            param: String::from("f"),
-            body: Rc::new(Term::App {
-                func: Rc::new(Term::Abs {
-                    param: String::from("x"),
-                    body: Rc::new(Term::App {
-                        func: Rc::new(Term::Var {
-                            name: String::from("f"),
-                        }),
-                        arg: Rc::new(Term::Abs {
-                            param: String::from("y"),
-                            body: Rc::new(Term::App {
-                                func: Rc::new(Term::App {
-                                    func: Rc::new(Term::Var {
-                                        name: String::from("x"),
-                                    }),
-                                    arg: Rc::new(Term::Var {
-                                        name: String::from("x"),
-                                    }),
-                                }),
-                                arg: Rc::new(Term::Var {
-                                    name: String::from("y"),
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-                arg: Rc::new(Term::Abs {
-                    param: String::from("x"),
-                    body: Rc::new(Term::App {
-                        func: Rc::new(Term::Var {
-                            name: String::from("f"),
-                        }),
-                        arg: Rc::new(Term::Abs {
-                            param: String::from("y"),
-                            body: Rc::new(Term::App {
-                                func: Rc::new(Term::App {
-                                    func: Rc::new(Term::Var {
-                                        name: String::from("x"),
-                                    }),
-                                    arg: Rc::new(Term::Var {
-                                        name: String::from("x"),
-                                    }),
-                                }),
-                                arg: Rc::new(Term::Var {
-                                    name: String::from("y"),
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            }),
-        }),
-    }];
+    let mut input = String::new();
+    io::stdin()
+        .read_to_string(&mut input)
+        .expect("failed to read");
+    let program = parser::parse(&input).expect("parse error");
     let program = transformer::transform(&program);
     let code = generator::generate(&program);
     println!("{}", code);
