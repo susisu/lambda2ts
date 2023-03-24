@@ -4,7 +4,7 @@ A PoC compiler that translates untyped lambda calculus into TypeScript types.
 
 ## Background
 
-Recently, a technique has been discovered that enables the use of first-class type-level functions in TypeScript (see [gvergnaud/hotscript](https://github.com/gvergnaud/hotscript)). For example, we can write and use first-class type-level functions as follows:
+Recently, a new technique has been discovered that enables the use of first-class type-level functions in TypeScript (see [gvergnaud/hotscript](https://github.com/gvergnaud/hotscript)). For example, we can write and use first-class type-level functions as follows:
 
 ``` typescript
 // Fun is the interface that represents first-class type-level functions.
